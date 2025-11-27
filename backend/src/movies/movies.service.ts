@@ -1,6 +1,4 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import axios, { AxiosError } from "axios";
 import { MovieDto } from "./dto/movie.dto";
 import {
   SearchMoviesDataResponseDto,
@@ -10,44 +8,23 @@ import {
 } from "./dto/movie-response.dto";
 import { FavoritesRepository } from "./repositories/favorites.repository";
 import {
+  OmdbIntegrationService,
+  OmdbMovie,
+} from "./integrations/omdb-integration.service";
+import {
   MovieNotFoundException,
   MovieAlreadyExistsException,
   InvalidSearchQueryException,
-  ExternalApiException,
 } from "../common/exceptions";
-
-interface OmdbSearchResponse {
-  Search?: OmdbMovie[];
-  totalResults?: string;
-  Response: string;
-  Error?: string;
-}
-
-interface OmdbMovie {
-  Title: string;
-  Year: string;
-  imdbID: string;
-  Type: string;
-  Poster: string;
-}
 
 @Injectable()
 export class MoviesService {
   private readonly logger = new Logger(MoviesService.name);
-  private readonly omdbApiUrl: string;
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly omdbIntegrationService: OmdbIntegrationService,
     private readonly favoritesRepository: FavoritesRepository
-  ) {
-    const apiKey = this.configService.get<string>("OMDB_API_KEY");
-    if (!apiKey) {
-      this.logger.warn(
-        "OMDB_API_KEY not configured. Movie search will not work."
-      );
-    }
-    this.omdbApiUrl = `http://www.omdbapi.com/?apikey=${apiKey || ""}`;
-  }
+  ) {}
 
   async searchMovies(
     title: string,
@@ -55,29 +32,12 @@ export class MoviesService {
   ): Promise<SearchMoviesDataResponseDto> {
     this.validateSearchQuery(title);
 
-    const encodedTitle = encodeURIComponent(title.trim());
-    const validPage = Math.max(1, page);
+    const { movies, totalResults } =
+      await this.omdbIntegrationService.searchMovies(title, page);
 
-    try {
-      const response = await axios.get<OmdbSearchResponse>(
-        `${this.omdbApiUrl}&s=${encodedTitle}&page=${validPage}`
-      );
+    const formattedMovies = this.formatMoviesWithFavoriteStatus(movies);
 
-      if (response.data.Response === "False" || response.data.Error) {
-        this.logger.debug(`OMDB API returned no results for: ${title}`);
-        return this.buildSearchResponse([], "0");
-      }
-
-      const movies = response.data.Search || [];
-      const formattedMovies = this.formatMoviesWithFavoriteStatus(movies);
-
-      return this.buildSearchResponse(
-        formattedMovies,
-        response.data.totalResults || "0"
-      );
-    } catch (error) {
-      this.handleApiError(error, "OMDB");
-    }
+    return this.buildSearchResponse(formattedMovies, totalResults);
   }
 
   async getMovieByTitle(
@@ -174,16 +134,5 @@ export class MoviesService {
         totalResults,
       },
     };
-  }
-
-  private handleApiError(error: unknown, serviceName: string): never {
-    if (error instanceof AxiosError) {
-      this.logger.error(
-        `${serviceName} API error: ${error.message}`,
-        error.stack
-      );
-      throw new ExternalApiException(serviceName, error.message);
-    }
-    throw error;
   }
 }
