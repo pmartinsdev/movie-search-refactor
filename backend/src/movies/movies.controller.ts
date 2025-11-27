@@ -1,44 +1,97 @@
-import { Controller, Get, Post, Delete, Param, Query, Body } from '@nestjs/common';
-import { MoviesService } from './movies.service';
-import { MovieDto } from './dto/movie.dto';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Query,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from "@nestjs/common";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiConflictResponse,
+} from "@nestjs/swagger";
+import { MoviesService } from "./movies.service";
+import {
+  MovieDto,
+  SearchMoviesQueryDto,
+  PaginationQueryDto,
+  SearchMoviesDataResponseDto,
+  FavoritesDataResponseDto,
+  MessageDataResponseDto,
+} from "./dto";
 
-@Controller('movies')
+@ApiTags("Movies")
+@Controller("movies")
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
-  @Get('search')
-  async searchMovies(@Query('q') query: string, @Query('page') page?: string) {
-    // BUG: Not validating query parameter
-    // BUG: Not handling missing query - will pass undefined to service
-    // BUG: If query is empty string, service will make API call with empty search
-    const pageNumber = page ? parseInt(page, 10) : 1;
-    // BUG: No validation that pageNumber is valid (NaN, negative, or 0)
-    // BUG: If page is "abc", parseInt returns NaN and service receives NaN
-    return await this.moviesService.getMovieByTitle(query, pageNumber);
+  @Get("search")
+  @ApiOperation({ summary: "Search movies by title" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "Movies found successfully",
+    type: SearchMoviesDataResponseDto,
+  })
+  @ApiBadRequestResponse({ description: "Invalid search query" })
+  async searchMovies(
+    @Query() searchQuery: SearchMoviesQueryDto
+  ): Promise<SearchMoviesDataResponseDto> {
+    return this.moviesService.getMovieByTitle(searchQuery.q, searchQuery.page);
   }
 
-  @Post('favorites')
-  addToFavorites(@Body() movieToAdd: MovieDto) {
-    // BUG: No validation decorators
-    // BUG: Not checking if movieToAdd is null/undefined
+  @Post("favorites")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "Add a movie to favorites" })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: "Movie added to favorites successfully",
+    type: MessageDataResponseDto,
+  })
+  @ApiBadRequestResponse({ description: "Invalid movie data" })
+  @ApiConflictResponse({ description: "Movie already exists in favorites" })
+  addToFavorites(@Body() movieToAdd: MovieDto): MessageDataResponseDto {
     return this.moviesService.addToFavorites(movieToAdd);
   }
 
-  @Delete('favorites/:imdbID')
-  removeFromFavorites(@Param('imdbID') imdbID: string) {
-    // BUG: No validation
+  @Delete("favorites/:imdbID")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Remove a movie from favorites" })
+  @ApiParam({
+    name: "imdbID",
+    description: "The IMDb ID of the movie to remove",
+    example: "tt0133093",
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "Movie removed from favorites successfully",
+    type: MessageDataResponseDto,
+  })
+  @ApiNotFoundResponse({ description: "Movie not found in favorites" })
+  removeFromFavorites(@Param("imdbID") imdbID: string): MessageDataResponseDto {
     return this.moviesService.removeFromFavorites(imdbID);
   }
 
-  @Get('favorites/list')
-  getFavorites(@Query('page') page?: string) {
-    // BUG: No error handling if page is invalid
-    // BUG: If page is "0" or negative, service will return wrong results
-    // BUG: If page is "abc", parseInt returns NaN, service receives NaN
-    const pageNumber = page ? parseInt(page, 10) : 1;
-    // BUG: Not handling case where service throws HttpException for empty favorites
-    return this.moviesService.getFavorites(pageNumber);
+  @Get("favorites/list")
+  @ApiOperation({ summary: "Get paginated list of favorite movies" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "Favorites retrieved successfully",
+    type: FavoritesDataResponseDto,
+  })
+  getFavorites(
+    @Query() paginationQuery: PaginationQueryDto
+  ): FavoritesDataResponseDto {
+    return this.moviesService.getFavorites(
+      paginationQuery.page,
+      paginationQuery.pageSize
+    );
   }
-
 }
-
