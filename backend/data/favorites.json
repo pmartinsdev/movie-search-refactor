@@ -10,5 +10,11 @@
     "imdbID": "tt7654321",
     "year": 2022,
     "poster": "N/A"
+  },
+  {
+    "title": "Avengers: Infinity War",
+    "imdbID": "tt4154756",
+    "year": "2018",
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjMxNjY2MDU1OV5BMl5BanBnXkFtZTgwNzY1MTUwNTM@._V1_SX300.jpg"
   }
 ]
