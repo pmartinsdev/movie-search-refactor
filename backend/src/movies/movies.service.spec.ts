@@ -149,7 +149,10 @@ describe(MoviesService.name, () => {
 
       await service.searchMovies("Matrix", 2);
 
-      expect(omdbIntegrationService.searchMovies).toHaveBeenCalledWith("Matrix", 2);
+      expect(omdbIntegrationService.searchMovies).toHaveBeenCalledWith(
+        "Matrix",
+        2
+      );
     });
   });
 
@@ -162,7 +165,10 @@ describe(MoviesService.name, () => {
 
       await service.getMovieByTitle("Matrix", 2);
 
-      expect(omdbIntegrationService.searchMovies).toHaveBeenCalledWith("Matrix", 2);
+      expect(omdbIntegrationService.searchMovies).toHaveBeenCalledWith(
+        "Matrix",
+        2
+      );
     });
   });
 
