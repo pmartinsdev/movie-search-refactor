@@ -12,6 +12,16 @@ interface MovieCardProps {
 }
 
 const NO_IMAGE_PLACEHOLDER = "N/A";
+const ALLOWED_IMAGE_HOSTS = ["m.media-amazon.com", "ia.media-imdb.com"];
+
+function isAllowedImageHost(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname;
+    return ALLOWED_IMAGE_HOSTS.some((host) => hostname.includes(host));
+  } catch {
+    return false;
+  }
+}
 
 function MovieCardComponent({
   movie,
@@ -35,6 +45,7 @@ function MovieCardComponent({
     movie.poster &&
     movie.poster !== NO_IMAGE_PLACEHOLDER &&
     movie.poster.trim() !== "" &&
+    isAllowedImageHost(movie.poster) &&
     !imageError;
 
   return (
