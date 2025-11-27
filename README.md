@@ -1,104 +1,172 @@
-# Movie Search Application - Take Home Challenge
+# Movie Search Application
 
 ## Overview
 
-This is a full-stack movie search application that allows users to search for movies using the OMDb API and manage their favorite movies. The application consists of a NestJS backend and a Next.js frontend.
+A full-stack movie search application that allows users to search for movies using the OMDb API and manage their favorite movies. Built with NestJS (backend) and Next.js (frontend).
 
-## Current Status
+## Tech Stack
 
-The application is **functional but has several issues** that need to be addressed. The codebase works for basic use cases but contains bugs, type safety issues, error handling problems, and code quality concerns that need attention.
+### Backend
+- **NestJS** - Node.js framework
+- **TypeScript** - Type safety
+- **Swagger** - API documentation
+- **class-validator** - DTO validation
+- **Jest** - Testing
 
-Your task is to identify and fix bugs, refactor code, and improve the overall quality of the codebase. Some issues may only manifest under specific conditions or edge cases.
+### Frontend
+- **Next.js 15** - React framework
+- **TypeScript** - Type safety
+- **TanStack Query** - Data fetching and caching
+- **Tailwind CSS** - Styling
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 18+
 - An OMDb API key (get one free at [omdbapi.com](http://www.omdbapi.com/apikey.aspx))
 
-### Setup Instructions
+### Backend Setup
 
-1. **Backend Setup:**
-   ```bash
-   cd backend
-   npm install
-   ```
-   Create a `.env` file in the `backend` directory:
-   ```
-   OMDB_API_KEY=your_api_key_here
-   PORT=3001
-   ```
-   Start the backend:
-   ```bash
-   npm run start:dev
-   ```
+```bash
+cd backend
+npm install
+```
 
-2. **Frontend Setup:**
-   ```bash
-   cd frontend
-   npm install
-   ```
-   Start the frontend:
-   ```bash
-   npm run dev
-   ```
+Create a `.env` file in the `backend` directory:
 
-3. Open your browser and navigate to `http://localhost:3000`
+```env
+OMDB_API_KEY=your_api_key_here
+PORT=3001
+CORS_ORIGINS=http://localhost:3000
+```
+
+Start the backend:
+
+```bash
+npm run start:dev
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+```
+
+Optionally create a `.env.local` file:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001/movies
+```
+
+Start the frontend:
+
+```bash
+npm run dev
+```
+
+Open your browser and navigate to `http://localhost:3000`
+
+## API Documentation
+
+Swagger documentation is available at: `http://localhost:3001/api/docs`
+
+### Available Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/movies/search` | Search movies by title |
+| GET | `/movies/favorites/list` | Get paginated favorites |
+| POST | `/movies/favorites` | Add movie to favorites |
+| DELETE | `/movies/favorites/:imdbID` | Remove from favorites |
 
 ## Application Features
 
-- Search for movies using the OMDb API
-- Add movies to favorites
-- Remove movies from favorites
-- View paginated list of favorite movies
-- Responsive UI design
+- 🔍 Search for movies using the OMDb API
+- ⭐ Add/remove movies to favorites
+- 📄 Paginated results
+- 📱 Responsive UI design
+- 🔄 Real-time favorite status updates
+- ⚡ Optimized performance with memoization
+- ♿ Accessible UI components
 
-## Your Task
+## Project Structure
 
-Review the codebase systematically and address issues you find. You should:
+```
+├── backend/
+│   ├── src/
+│   │   ├── common/
+│   │   │   ├── exceptions/       # Custom exceptions
+│   │   │   ├── filters/          # Exception filters
+│   │   │   └── interceptors/     # Logging interceptor
+│   │   └── movies/
+│   │       ├── dto/              # Data transfer objects
+│   │       ├── integrations/     # OMDB API integration
+│   │       └── repositories/     # Data access layer
+│   ├── data/                     # JSON storage
+│   └── CHANGES.md                # Backend changes documentation
+│
+├── frontend/
+│   ├── src/
+│   │   ├── app/                  # Next.js pages
+│   │   ├── components/           # React components
+│   │   ├── hooks/                # Custom hooks
+│   │   ├── lib/                  # API layer
+│   │   ├── providers/            # Context providers
+│   │   └── types/                # TypeScript types
+│   └── CHANGES.md                # Frontend changes documentation
+```
 
-1. **Identify Bugs**: Test the application thoroughly and identify bugs that affect functionality
-2. **Fix Critical Issues**: Prioritize and fix bugs that cause crashes, incorrect behavior, or data inconsistencies
-3. **Improve Error Handling**: Add proper error handling for API calls, user inputs, and edge cases
-4. **Enhance Type Safety**: Fix TypeScript issues and ensure type consistency throughout the codebase
-5. **Add Validation**: Implement input validation for user inputs and API parameters
-6. **Refactor Code**: Improve code quality, remove duplication, and apply best practices
-7. **Optimize Performance**: Address any performance issues you identify (unnecessary re-renders, inefficient queries, etc.)
+## Environment Variables
 
-**Note**: Some bugs may only appear under specific conditions. Test edge cases like empty states, invalid inputs, network failures, and rapid user interactions.
+### Backend
 
-## Submission Guidelines
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OMDB_API_KEY` | OMDb API key (required) | - |
+| `PORT` | Server port | `3001` |
+| `CORS_ORIGINS` | Allowed origins (comma-separated) | `http://localhost:3000` |
 
-1. Fork or clone this repository
-2. Make your changes
-3. Document your changes in a `CHANGES.md` file explaining:
-   - What issues you found
-   - How you fixed them
-   - Any refactoring you did
-   - Any improvements you made
-4. Submit your solution
+### Frontend
 
-## Time Limit
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:3001/movies` |
 
-This challenge should be completable within **2 hours** for a senior developer.
+## Running Tests
 
-## Notes
+### Backend
 
-- **Testing is important**: Run the application and test various scenarios to identify issues
-- **Focus on critical bugs first**: Prioritize bugs that affect core functionality
-- **No new features needed**: Focus on fixing and improving existing code
-- **End-to-end functionality**: Ensure all features work correctly after your changes
-- **Production-ready code**: Apply best practices and ensure code quality
+```bash
+cd backend
+npm run test           # Run unit tests
+npm run test:watch     # Run tests in watch mode
+npm run test:cov       # Run tests with coverage
+npm run test:e2e       # Run e2e tests
+```
 
-## Tips
+## Architecture Principles
 
-- Start by running the application and testing all features
-- Check browser console and server logs for errors
-- Test edge cases (empty searches, invalid inputs, network issues)
-- Review error handling in both frontend and backend
-- Pay attention to type mismatches and TypeScript errors
-- Consider race conditions and state synchronization issues
+### SOLID Principles Applied
 
-Good luck!
+- **Single Responsibility**: Each class/module has one purpose
+- **Open/Closed**: Extensible through dependency injection
+- **Liskov Substitution**: Interfaces define contracts
+- **Interface Segregation**: Specific interfaces for specific needs
+- **Dependency Inversion**: Dependencies injected, not hardcoded
 
+### Clean Code Practices
+
+- Meaningful names for variables and functions
+- Small, focused functions
+- Type safety throughout
+- Proper error handling
+- No code comments (self-documenting code)
+
+## Documentation
+
+For detailed information about the refactoring changes:
+
+- [Backend Changes](./backend/CHANGES.md)
+- [Frontend Changes](./frontend/CHANGES.md)
