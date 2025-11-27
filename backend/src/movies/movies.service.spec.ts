@@ -1,24 +1,17 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { ConfigService } from "@nestjs/config";
-import axios from "axios";
 import { MoviesService } from "./movies.service";
 import { FavoritesRepository } from "./repositories/favorites.repository";
+import { OmdbIntegrationService } from "./integrations/omdb-integration.service";
 import {
   MovieNotFoundException,
   MovieAlreadyExistsException,
   InvalidSearchQueryException,
 } from "../common/exceptions";
 
-jest.mock("axios");
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-
 describe(MoviesService.name, () => {
   let service: MoviesService;
   let favoritesRepository: jest.Mocked<FavoritesRepository>;
-
-  const mockConfigService = {
-    get: jest.fn().mockReturnValue("test-api-key"),
-  };
+  let omdbIntegrationService: jest.Mocked<OmdbIntegrationService>;
 
   const mockFavoritesRepository = {
     exists: jest.fn(),
@@ -28,38 +21,42 @@ describe(MoviesService.name, () => {
     findAll: jest.fn(),
   };
 
+  const mockOmdbIntegrationService = {
+    searchMovies: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MoviesService,
-        { provide: ConfigService, useValue: mockConfigService },
         { provide: FavoritesRepository, useValue: mockFavoritesRepository },
+        {
+          provide: OmdbIntegrationService,
+          useValue: mockOmdbIntegrationService,
+        },
       ],
     }).compile();
 
     service = module.get<MoviesService>(MoviesService);
     favoritesRepository = module.get(FavoritesRepository);
+    omdbIntegrationService = module.get(OmdbIntegrationService);
     jest.clearAllMocks();
   });
 
   describe(MoviesService.prototype.searchMovies.name, () => {
     it("must return movies array with correct length", async () => {
-      const mockResponse = {
-        data: {
-          Search: [
-            {
-              Title: "Matrix",
-              Year: "1999",
-              imdbID: "tt0133093",
-              Poster: "url",
-              Type: "movie",
-            },
-          ],
-          totalResults: "1",
-          Response: "True",
-        },
-      };
-      mockedAxios.get.mockResolvedValue(mockResponse);
+      mockOmdbIntegrationService.searchMovies.mockResolvedValue({
+        movies: [
+          {
+            Title: "Matrix",
+            Year: "1999",
+            imdbID: "tt0133093",
+            Poster: "url",
+            Type: "movie",
+          },
+        ],
+        totalResults: "1",
+      });
       mockFavoritesRepository.exists.mockReturnValue(false);
 
       const result = await service.searchMovies("Matrix", 1);
@@ -68,22 +65,18 @@ describe(MoviesService.name, () => {
     });
 
     it("must return movie with correct title", async () => {
-      const mockResponse = {
-        data: {
-          Search: [
-            {
-              Title: "Matrix",
-              Year: "1999",
-              imdbID: "tt0133093",
-              Poster: "url",
-              Type: "movie",
-            },
-          ],
-          totalResults: "1",
-          Response: "True",
-        },
-      };
-      mockedAxios.get.mockResolvedValue(mockResponse);
+      mockOmdbIntegrationService.searchMovies.mockResolvedValue({
+        movies: [
+          {
+            Title: "Matrix",
+            Year: "1999",
+            imdbID: "tt0133093",
+            Poster: "url",
+            Type: "movie",
+          },
+        ],
+        totalResults: "1",
+      });
       mockFavoritesRepository.exists.mockReturnValue(false);
 
       const result = await service.searchMovies("Matrix", 1);
@@ -98,13 +91,10 @@ describe(MoviesService.name, () => {
     });
 
     it("must return empty movies array when OMDB returns no results", async () => {
-      const mockResponse = {
-        data: {
-          Response: "False",
-          Error: "Movie not found!",
-        },
-      };
-      mockedAxios.get.mockResolvedValue(mockResponse);
+      mockOmdbIntegrationService.searchMovies.mockResolvedValue({
+        movies: [],
+        totalResults: "0",
+      });
 
       const result = await service.searchMovies("nonexistent", 1);
 
@@ -112,22 +102,18 @@ describe(MoviesService.name, () => {
     });
 
     it("must mark movie as favorite when it exists in favorites", async () => {
-      const mockResponse = {
-        data: {
-          Search: [
-            {
-              Title: "Matrix",
-              Year: "1999",
-              imdbID: "tt0133093",
-              Poster: "url",
-              Type: "movie",
-            },
-          ],
-          totalResults: "1",
-          Response: "True",
-        },
-      };
-      mockedAxios.get.mockResolvedValue(mockResponse);
+      mockOmdbIntegrationService.searchMovies.mockResolvedValue({
+        movies: [
+          {
+            Title: "Matrix",
+            Year: "1999",
+            imdbID: "tt0133093",
+            Poster: "url",
+            Type: "movie",
+          },
+        ],
+        totalResults: "1",
+      });
       mockFavoritesRepository.exists.mockReturnValue(true);
 
       const result = await service.searchMovies("Matrix", 1);
@@ -136,46 +122,47 @@ describe(MoviesService.name, () => {
     });
 
     it("must call favoritesRepository.exists for each movie", async () => {
-      const mockResponse = {
-        data: {
-          Search: [
-            {
-              Title: "Matrix",
-              Year: "1999",
-              imdbID: "tt0133093",
-              Poster: "url",
-              Type: "movie",
-            },
-          ],
-          totalResults: "1",
-          Response: "True",
-        },
-      };
-      mockedAxios.get.mockResolvedValue(mockResponse);
+      mockOmdbIntegrationService.searchMovies.mockResolvedValue({
+        movies: [
+          {
+            Title: "Matrix",
+            Year: "1999",
+            imdbID: "tt0133093",
+            Poster: "url",
+            Type: "movie",
+          },
+        ],
+        totalResults: "1",
+      });
       mockFavoritesRepository.exists.mockReturnValue(false);
 
       await service.searchMovies("Matrix", 1);
 
       expect(favoritesRepository.exists).toHaveBeenCalledWith("tt0133093");
     });
+
+    it("must call omdbIntegrationService.searchMovies with title and page", async () => {
+      mockOmdbIntegrationService.searchMovies.mockResolvedValue({
+        movies: [],
+        totalResults: "0",
+      });
+
+      await service.searchMovies("Matrix", 2);
+
+      expect(omdbIntegrationService.searchMovies).toHaveBeenCalledWith("Matrix", 2);
+    });
   });
 
   describe(MoviesService.prototype.getMovieByTitle.name, () => {
-    it("must call axios.get with title in URL", async () => {
-      const mockResponse = {
-        data: {
-          Search: [],
-          totalResults: "0",
-          Response: "True",
-        },
-      };
-      mockedAxios.get.mockResolvedValue(mockResponse);
+    it("must call searchMovies with title and page", async () => {
+      mockOmdbIntegrationService.searchMovies.mockResolvedValue({
+        movies: [],
+        totalResults: "0",
+      });
 
       await service.getMovieByTitle("Matrix", 2);
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining("Matrix")
-      );
+      expect(omdbIntegrationService.searchMovies).toHaveBeenCalledWith("Matrix", 2);
     });
   });
 
